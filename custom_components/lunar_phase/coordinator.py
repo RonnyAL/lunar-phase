@@ -1,5 +1,6 @@
 """Coordinator for the Moon Phase integration."""
 
+from dataclasses import dataclass
 from datetime import timedelta
 import logging
 
@@ -12,8 +13,19 @@ from .moon import MoonCalc
 _LOGGER = logging.getLogger(__name__)
 
 
+@dataclass
+class MoonPhaseData:
+    """Moon Phase data."""
+
+    moon_phase: str
+    attributes: dict
+    extra_attributes: dict
+
+
 class MoonUpdateCoordinator(DataUpdateCoordinator):
     """Class to calculate the Moon phase."""
+
+    data: MoonPhaseData
 
     def __init__(self, hass: HomeAssistant, moon_calc: MoonCalc) -> None:
         """Initialize the coordinator."""
@@ -32,22 +44,14 @@ class MoonUpdateCoordinator(DataUpdateCoordinator):
         """Fetch data from the source."""
         try:
             await self.hass.async_add_executor_job(self.moon_calc.update)
-            moon_phase = await self.hass.async_add_executor_job(
-                self.moon_calc.get_moon_phase_name
-            )
-            attributes = await self.hass.async_add_executor_job(
-                self.moon_calc.get_moon_attributes
-            )
 
-            extra_attributes = await self.hass.async_add_executor_job(
-                self.moon_calc.get_extra_attributes
-            )
+            data = {
+                "moon_phase": self.moon_calc.get_moon_phase_name(),
+                "attributes": self.moon_calc.get_moon_attributes(),
+                "extra_attributes": self.moon_calc.get_extra_attributes(),
+            }
 
         except Exception as err:
             raise UpdateFailed(f"Error updating data: {err}") from err
-        else:
-            return {
-                "moon_phase": moon_phase,
-                "attributes": attributes,
-                "extra_attributes": extra_attributes,
-            }
+
+        return MoonPhaseData(**data)

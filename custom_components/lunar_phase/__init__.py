@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import logging
 
 from homeassistant.config_entries import ConfigEntry, ConfigEntryNotReady
@@ -18,6 +19,14 @@ _LOGGER = logging.getLogger(__name__)
 PLATFORMS = [
     Platform.SENSOR,
 ]
+
+
+@dataclass
+class MoonPhaseEntryData:
+    """Moon Phase entry data."""
+
+    coordinator: MoonUpdateCoordinator
+    moon_calc: MoonCalc
 
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
@@ -42,10 +51,9 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         # Fetch initial data to ensure the coordinator is working
         await coordinator.async_config_entry_first_refresh()
 
-        hass.data[DOMAIN][config_entry.entry_id] = {
-            "coordinator": coordinator,
-            "moon_calc": moon,
-        }
+        hass.data[DOMAIN][config_entry.entry_id] = MoonPhaseEntryData(
+            coordinator=coordinator, moon_calc=moon
+        )
 
         await hass.config_entries.async_forward_entry_setups(config_entry, PLATFORMS)
 

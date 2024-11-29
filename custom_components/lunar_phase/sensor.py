@@ -38,12 +38,14 @@ async def async_setup_entry(
     """Set up the Lunar Phase sensor platform."""
 
     _LOGGER.debug("Setting up Lunar Phase sensor entry: %s", entry.data["city"])
-    data = hass.data[DOMAIN][entry.entry_id]
-    coordinator = data["coordinator"]
-    moon_calc = data["moon_calc"]
+    coordinator: MoonUpdateCoordinator = hass.data[DOMAIN][entry.entry_id].coordinator
+    moon_calc: MoonCalc = hass.data[DOMAIN][entry.entry_id].moon_calc
+
+    await coordinator.async_config_entry_first_refresh()
 
     try:
-        sensors = [MainPhaseSensor(coordinator, moon_calc, entry)]
+        phase_sensor = [MainPhaseSensor(coordinator, moon_calc, entry)]
+        sensors = []
         for sensor_name, sensor_config in BASE_LUNAR_SENSORS.items():
             sensors.append(
                 AttributeSensor(
@@ -51,10 +53,11 @@ async def async_setup_entry(
                 )
             )
 
+        async_add_entities(phase_sensor, True)
         async_add_entities(sensors, True)
 
         _LOGGER.debug(
-            "Successfully set up Lunar Phase sensor entry: %s", sensors[0].name
+            "Successfully set up Lunar Phase sensor entry: %s", entry.data["city"]
         )
 
     except Exception as err:
@@ -85,8 +88,9 @@ class MainPhaseSensor(CoordinatorEntity[MoonUpdateCoordinator], SensorEntity):
         super().__init__(coordinator, moon_calc)
         self._city = config_entry.data["city"]
         self.moon_calc = moon_calc
-        self._attr_force_update = True
+        self._attr_force_update = False
         self._attr_unique_id = f"{config_entry.entry_id}_moon_phase"
+        self._attr_should_poll = True
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, config_entry.entry_id)},
             manufacturer="Moon",
@@ -97,8 +101,8 @@ class MainPhaseSensor(CoordinatorEntity[MoonUpdateCoordinator], SensorEntity):
     @callback
     def _handle_coordinator_update(self) -> None:
         """Update sensor with latest data from coordinator."""
-        self._attr_native_value = self.coordinator.data.get("moon_phase")
-        attributes = self.coordinator.data.get("attributes", {})
+        self._attr_native_value = self.coordinator.data.moon_phase
+        attributes = self.coordinator.data.attributes
         location = self.moon_calc.location
         self._attr_extra_state_attributes = (
             {
@@ -109,12 +113,6 @@ class MainPhaseSensor(CoordinatorEntity[MoonUpdateCoordinator], SensorEntity):
             else attributes
         )
         self.async_write_ha_state()
-        # _LOGGER.debug(
-        #     "Updated %s sensor, new state: %s, attributes: %s",
-        #     self.name,
-        #     self._attr_native_value,
-        #     self._attr_extra_state_attributes,
-        # )
 
     @property
     def unique_id(self):
@@ -129,7 +127,12 @@ class MainPhaseSensor(CoordinatorEntity[MoonUpdateCoordinator], SensorEntity):
     @property
     def native_value(self):
         """Return the state of the sensor."""
-        return self.coordinator.data.get("moon_phase")
+        return self.coordinator.data.moon_phase
+
+    async def async_update(self) -> None:
+        """Update the entity."""
+        _LOGGER.debug("Updating sensor: %s, %s", self.name, self.state)
+        return await super().async_update()
 
 
 class AttributeSensor(CoordinatorEntity[MoonUpdateCoordinator], SensorEntity):
@@ -153,7 +156,8 @@ class AttributeSensor(CoordinatorEntity[MoonUpdateCoordinator], SensorEntity):
         self._city = entry.data[CONF_CITY]
         self._state_key = self._config_entry[1]
         self._extra_state_keys = self._config_entry[6]
-        self._attr_force_update = True
+        self._attr_should_poll = True
+        self._attr_force_update = False
         self._attr_name = self._config_entry[0]
         self._attr_unique_id = f"{entry.entry_id}_{self._internal_name}"
         self._attr_translation_key = self._config_entry[1]
@@ -177,6 +181,7 @@ class AttributeSensor(CoordinatorEntity[MoonUpdateCoordinator], SensorEntity):
         self._attr_state = self.native_value
         self._attr_native_value = self.native_value
         self._attr_extra_state_attributes = self.extra_state_attributes
+
         self.async_write_ha_state()
 
     @property
@@ -205,11 +210,16 @@ class AttributeSensor(CoordinatorEntity[MoonUpdateCoordinator], SensorEntity):
         if not self._extra_state_keys:
             return {}
 
-        attributes = self.coordinator.data.get("extra_attributes", {})
+        attributes = self.coordinator.data.extra_attributes
         return {key: attributes.get(key) for key in self._extra_state_keys}
 
     @property
     def native_value(self):
         """Return the state of the sensor."""
-        attributes = self.coordinator.data.get("attributes", {})
+        attributes = self.coordinator.data.attributes
         return attributes.get(self._state_key)
+
+    async def async_update(self) -> None:
+        """Update the entity."""
+        _LOGGER.debug("Updating sensor: %s, %s", self.name, self.state)
+        return await super().async_update()

@@ -3,7 +3,7 @@
 from enum import Enum
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
-from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfLength, UnitOfTime
+from homeassistant.const import PERCENTAGE, UnitOfLength, UnitOfTime
 
 DOMAIN = "lunar_phase"
 
@@ -112,7 +112,7 @@ BASE_LUNAR_SENSORS = {
         None,
         [],
         None,
-        EntityCategory.DIAGNOSTIC,
+        None,
     ],
     STATE_ATTR_NEXT_NEW: [
         "Next New Moon",
@@ -123,7 +123,7 @@ BASE_LUNAR_SENSORS = {
         None,
         [],
         None,
-        EntityCategory.DIAGNOSTIC,
+        None,
     ],
     STATE_ATTR_NEXT_THIRD: [
         "Next Third Quarter",
@@ -134,7 +134,7 @@ BASE_LUNAR_SENSORS = {
         None,
         [],
         None,
-        EntityCategory.DIAGNOSTIC,
+        None,
     ],
     STATE_ATTR_NEXT_FIRST: [
         "Next First Quarter",
@@ -145,7 +145,7 @@ BASE_LUNAR_SENSORS = {
         None,
         [],
         None,
-        EntityCategory.DIAGNOSTIC,
+        None,
     ],
     STATE_ATTR_NEXT_RISE: [
         "Moon Rise",
@@ -156,7 +156,7 @@ BASE_LUNAR_SENSORS = {
         None,
         [],
         None,
-        EntityCategory.DIAGNOSTIC,
+        None,
     ],
     STATE_ATTR_NEXT_SET: [
         "Moon Set",
@@ -167,7 +167,7 @@ BASE_LUNAR_SENSORS = {
         None,
         [],
         None,
-        EntityCategory.DIAGNOSTIC,
+        None,
     ],
     STATE_ATTR_NEXT_HIGH: [
         "Moon High",
@@ -178,7 +178,7 @@ BASE_LUNAR_SENSORS = {
         None,
         [],
         None,
-        EntityCategory.DIAGNOSTIC,
+        None,
     ],
     STATE_ATTR_ALTITUDE: [
         "Moon Altitude",
@@ -222,6 +222,6 @@ BASE_LUNAR_SENSORS = {
         None,
         [EXTRA_ATTR_NEXT_PHASE],
         None,
-        EntityCategory.DIAGNOSTIC,
+        None,
     ],
 }
